@@ -5,6 +5,7 @@ from app.model.request import TranslatorRequest
 from app.utils.constants import UrlEndPoints
 from app.model.response import TranslatorResponse
 from app.utils.helper import get_code
+from sanic.exceptions import  BadRequest
 from app.Config import config
 from sanic.exceptions import SanicException
 import aiofiles
@@ -72,6 +73,37 @@ class Google(Translator):
         '''
         our_response['target_text'] =response['data']['translations'][0]['translatedText']
         return TranslatorResponse(**our_response)
+    
+    @classmethod 
+    async def file_translate(cls,request):
+        '''
+        Translate the file
+        '''
+        input_file = request['input_file']
+        try: 
+            with open(input_file, 'r') as file:
+                input_text = file.read()
+        except:
+            BadRequest("Input file doesnot exist")
+        chunks = split_text_into_chunks(input_text, cls.api_limit)
+        translated_chunks = []
+        tasks = []
+        our_data ={"source_language":request["source_language"],
+               "target_language":request["target_language"]}
+        print(our_data)
+        for chunk in chunks:
+            our_data["source_text"] = chunk
+            headers,params,data,_ = cls._build(TranslatorRequest(**our_data))
+            task = cls.async_api_call(headers,params,data)
+            tasks.append(task)
+        translated_chunks =  await asyncio.gather(*tasks,return_exceptions=True)
+        translated_chunks = [chunk['data']['translations'][0]['translatedText'] for chunk in translated_chunks]
+        translated_text = " ".join(translated_chunks)
+        output_language = request['target_language']
+        output_file = input_file.split('.')[0] + '_' + output_language + '.' + input_file.split('.')[1]
+        with open(output_file, 'w') as file:
+            file.write(translated_text)
+        return {"output_file":output_file}
     
 class Rapid(Translator):
     success = 1

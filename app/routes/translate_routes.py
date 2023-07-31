@@ -37,3 +37,9 @@ async def rapid(request,body:TranslatorRequest):
     request = request.json
     response = await Rapid.translate(request)
     return json(response)
+
+@trans_bp.post('/file')
+async def file(request):
+    request = request.json
+    response = await Google.file_translate(request)
+    return json(response)
