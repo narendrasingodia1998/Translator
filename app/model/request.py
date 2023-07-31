@@ -11,15 +11,14 @@ class TranslatorRequest(BaseModel):
     @validator('source_language')
     def validate_source_language(cls,value,values,**kwargs):
         if value and value.lower().strip() not in set(lang_code.keys()):
-            raise ValueError(f"API does not support {value} language as Source language .")
+            raise BadRequest(f"API does not support {value} language as Source language .")
         return value
     
     @validator('target_language')
     def validate_target_language(cls,value,values,**kwargs):
-        print(f'values = {values}')
         if value.lower().strip() not in set(lang_code.keys()):
             raise BadRequest(f"API does not support {value} language as Target language .")
-        if 'source_language' in values and value.lower().strip() == values['source_language'].lower().strip():
+        if 'source_language' in values and values['source_language'] and value.lower().strip() == values['source_language'].lower().strip():
             raise BadRequest("Target language cannot be the same as the source language.")
         return value
     

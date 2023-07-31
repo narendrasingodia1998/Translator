@@ -25,7 +25,6 @@ class Translator(Client):
          # if source language is not same as source text
          if 'source_language' in request and request['source_language'].lower() != response['source_language'].lower():
               SanicException("Source text and Source Language does not match.", status_code=400)
-              print("Rasie  Condition is satisified")
          request = copy_data(request,response)
          request = TranslatorRequest(**request)
          headers,params,data,our_response =  cls._build(request)
