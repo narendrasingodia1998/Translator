@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel,validator
+from sanic.exceptions import  BadRequest
 from app.utils.lang_code import lang_code
 
 class TranslatorRequest(BaseModel):
@@ -15,10 +16,11 @@ class TranslatorRequest(BaseModel):
     
     @validator('target_language')
     def validate_target_language(cls,value,values,**kwargs):
+        print(f'values = {values}')
         if value.lower().strip() not in set(lang_code.keys()):
-            raise ValueError(f"API does not support {value} language as Target language .")
+            raise BadRequest(f"API does not support {value} language as Target language .")
         if 'source_language' in values and value.lower().strip() == values['source_language'].lower().strip():
-            raise ValueError("Target language cannot be the same as the source language.")
+            raise BadRequest("Target language cannot be the same as the source language.")
         return value
     
 class DetectRequest(BaseModel):

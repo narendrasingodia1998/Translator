@@ -74,40 +74,6 @@ class Google(Translator):
         our_response['target_text'] =response['data']['translations'][0]['translatedText']
         return TranslatorResponse(**our_response)
     
-    @classmethod
-    async def file_translate(cls,request):
-        '''
-        Translate the File
-         Args:
-            request : dict 
-            request should have source_language,input file,target_langauge
-         Return : dict
-        '''
-        input_file = request['input_file']
-        try:
-            with open(input_file,'r') as file:
-                input_text = file.read() 
-        except:
-            SanicException("Input File doesnot exist", status_code=400)
-        chunks = split_text_into_chunks(input_text,cls.api_call_limit)
-        translated_chucks = []
-        tasks = []
-        data = {"source_langauge":request['source_language'],
-                "target_language":request['target_language']}
-        for chunk in chunks:
-            data["source_text"] = chunk
-            headers,params,data,our_response = cls._build()
-            task = cls.async_api_call(headers,params,data)
-            tasks.append(task)
-        tasks = await asyncio.gather(*tasks,return_exceptions=True)
-        for task in tasks:
-            translated_chucks.append(task['target_text'])
-        translated_text = " ".join(translated_chucks)
-        output_file = input_file.split('.')[0] + '_' + request['target_language'] + '.' + input_file.split('.')[1]
-        with open(output_file, 'w') as file:
-            file.write(translated_text)
-        return 
-    
 class Rapid(Translator):
     success = 1
     failure = 1
