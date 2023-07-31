@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+from sanic.exceptions import SanicException
 from sanic.exceptions import NotFound, BadRequest
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 
@@ -32,7 +33,7 @@ class Client:
                         return response
         except asyncio.TimeoutError:
              cls.failure += 1
-             pass
+             raise SanicException("Thrid party api request timeout.", status_code=408)
         
     
     def _build(self,request):

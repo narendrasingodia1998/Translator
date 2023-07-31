@@ -9,6 +9,12 @@ app = Sanic('Translator')
 app.blueprint(detect_bp)
 app.blueprint(trans_bp)
 
+
+@app.before_server_start
+async def readthefile():
+    
+    pass
+
 if __name__ == '__main__':
     app.run(auto_reload=True)
 

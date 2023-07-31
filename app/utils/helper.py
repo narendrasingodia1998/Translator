@@ -21,3 +21,7 @@ def copy_data(request,response):
     'source_text' : request['source_text'],
     'target_language': request['target_language']}
     return request_data
+
+def read_from_file():
+    
+    pass
