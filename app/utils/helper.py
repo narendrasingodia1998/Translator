@@ -22,6 +22,19 @@ def copy_data(request,response):
     'target_language': request['target_language']}
     return request_data
 
-def read_from_file():
-    
-    pass
+def split_text_into_chunks(text, chunk_size):
+    chunks = []
+    current_chunk = ""
+
+    for word in text.split():
+        if len(current_chunk) + len(word) <= chunk_size:
+            current_chunk += word + " "
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = word + " "
+
+    # Add the last chunk, if any
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks

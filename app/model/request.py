@@ -17,7 +17,7 @@ class TranslatorRequest(BaseModel):
     def validate_target_language(cls,value,values,**kwargs):
         if value.lower().strip() not in set(lang_code.keys()):
             raise ValueError(f"API does not support {value} language as Target language .")
-        if values["source_language"] in values and value.lower().strip() == values['source_language'].lower().strip():
+        if 'source_language' in values and value.lower().strip() == values['source_language'].lower().strip():
             raise ValueError("Target language cannot be the same as the source language.")
         return value
     

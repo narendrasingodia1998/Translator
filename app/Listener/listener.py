@@ -8,15 +8,9 @@ async def read_file():
         Google.success,Google.failure = eval(contents[0])
         Rapid.success,Rapid.failure = eval(contents[1])
         Lacto.success,Lacto.failure = eval(contents[2])
-        print(Google.success,Google.failure)
-        print(Rapid.success,Rapid.failure)
-        print(Lacto.success,Lacto.failure)
 
 async def write_file():
     async with aiofiles.open('performance_log.txt', mode='w') as f:
         await f.write(str((Google.success,Google.failure))+'/n')
         await f.write(str((Rapid.success,Rapid.failure))+'/n')
         await f.write(str((Lacto.success,Lacto.failure))+'/n')
-        print(Google.success,Google.failure)
-        print(Rapid.success,Rapid.failure)
-        print(Lacto.success,Lacto.failure)

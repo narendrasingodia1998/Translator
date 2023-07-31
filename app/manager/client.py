@@ -33,7 +33,7 @@ class Client:
                         return response
         except asyncio.TimeoutError:
              cls.failure += 1
-             raise SanicException("Thrid party api request timeout.", status_code=408)
+             raise SanicException("Thrid party api request timeout.", status_code=404)
         
     
     def _build(self,request):

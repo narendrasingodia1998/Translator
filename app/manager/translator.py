@@ -6,6 +6,10 @@ from app.utils.constants import UrlEndPoints
 from app.model.response import TranslatorResponse
 from app.utils.helper import get_code
 from app.Config import config
+from sanic.exceptions import SanicException
+import aiofiles
+import asyncio
+from app.utils.helper import split_text_into_chunks
 
 class Translator(Client):
     @classmethod
@@ -20,6 +24,7 @@ class Translator(Client):
          response = await DetectManager.detect_language(request)
          # if source language is not same as source text
          if 'source_language' in request and request['source_language'].lower() != response['source_language'].lower():
+              SanicException("Source text and Source Language does not match.", status_code=400)
               print("Rasie  Condition is satisified")
          request = copy_data(request,response)
          request = TranslatorRequest(**request)
@@ -27,11 +32,20 @@ class Translator(Client):
          response = await cls.async_api_call(headers,params,data)
          return dict(cls._build_response(our_response,response))
     
+    @classmethod
+    async def add_log(cls,text):
+        '''
+        Add the text in log file. 
+        '''
+        async with aiofiles.open(cls.file, mode='a') as f:
+            await f.write(text+'/n')
+    
 class Google(Translator):
     success = 1
     failure = 1
     api_limit = 5000
     url = UrlEndPoints.GOOGLE_URL
+    file = "google_log.txt"
 
     @classmethod
     def _build(cls,request):
@@ -60,27 +74,45 @@ class Google(Translator):
         our_response['target_text'] =response['data']['translations'][0]['translatedText']
         return TranslatorResponse(**our_response)
     
-    def file_translate(self,request):
+    @classmethod
+    async def file_translate(cls,request):
         '''
         Translate the File
          Args:
             request : dict 
+            request should have source_language,input file,target_langauge
          Return : dict
         '''
-        # input_file = request['input_file']
-        # try:
-        #     with open(input_file,'r') as file:
-        #        input_text = file.read() 
-        # except:
-        #     print("Raise")
-        # chucks = split_text_into_chunks(input_text,self.api_call_limit)
-        # translated_chucks = []
-        # pass
+        input_file = request['input_file']
+        try:
+            with open(input_file,'r') as file:
+                input_text = file.read() 
+        except:
+            SanicException("Input File doesnot exist", status_code=400)
+        chunks = split_text_into_chunks(input_text,cls.api_call_limit)
+        translated_chucks = []
+        tasks = []
+        data = {"source_langauge":request['source_language'],
+                "target_language":request['target_language']}
+        for chunk in chunks:
+            data["source_text"] = chunk
+            headers,params,data,our_response = cls._build()
+            task = cls.async_api_call(headers,params,data)
+            tasks.append(task)
+        tasks = await asyncio.gather(*tasks,return_exceptions=True)
+        for task in tasks:
+            translated_chucks.append(task['target_text'])
+        translated_text = " ".join(translated_chucks)
+        output_file = input_file.split('.')[0] + '_' + request['target_language'] + '.' + input_file.split('.')[1]
+        with open(output_file, 'w') as file:
+            file.write(translated_text)
+        return 
     
 class Rapid(Translator):
     success = 1
     failure = 1
     url = UrlEndPoints.RAPID_URL
+    file = "rapid_log.txt"
 
     @classmethod
     def _build(cls,request):
@@ -120,6 +152,7 @@ class Lacto(Translator):
     success = 1
     failure = 1
     url = UrlEndPoints.LACTO_URL
+    file = 'lacto_log.txt'
 
     @classmethod
     def _build(cls,request):
