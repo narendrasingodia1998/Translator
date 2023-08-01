@@ -10,6 +10,7 @@ from app.Config import config
 from sanic.exceptions import SanicException
 import aiofiles
 import asyncio
+from sanic.log import logger
 from app.utils.helper import split_text_into_chunks
 
 class Translator(Client):
@@ -23,9 +24,12 @@ class Translator(Client):
          '''
          # Checking source text language
          response = await DetectManager.detect_language(request)
+         
          # if source language is not same as source text
          if 'source_language' in request and request['source_language'].lower() != response['source_language'].lower():
               SanicException("Source text and Source Language does not match.", status_code=400)
+         if response['source_language'].lower() == request['target_language']:
+             SanicException("Source language and target language is same",status_code=400) 
          request = copy_data(request,response)
          request = TranslatorRequest(**request)
          headers,params,data,our_response =  cls._build(request)

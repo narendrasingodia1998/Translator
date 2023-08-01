@@ -4,6 +4,7 @@ from app.model.request import DetectRequest
 from app.utils.constants import UrlEndPoints
 from app.utils.helper import get_language
 from app.Config import config 
+from sanic.log import logger
 
 class DetectManager(Client):
     success = 1

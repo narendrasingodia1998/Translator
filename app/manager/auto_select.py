@@ -9,9 +9,9 @@ class AutoSelectManager():
             request : dict 
          Return : dict
          '''
-        google_success_rate = Google.success / Google.failure
-        rapid_success_rate = Rapid.success / Rapid.failure
-        lacto_success_rate = Lacto.success / Lacto.failure
+        google_success_rate = Google.success / (Google.failure+Google.success)
+        rapid_success_rate = Rapid.success / (Rapid.failure+Rapid.success)
+        lacto_success_rate = Lacto.success / (Lacto.failure+Lacto.success )
         if google_success_rate >= rapid_success_rate and google_success_rate >= lacto_success_rate:
             #print("Google is selected")
             manager = Google

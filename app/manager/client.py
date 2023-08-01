@@ -1,22 +1,20 @@
 import asyncio
 import aiohttp
+import time
 from sanic.exceptions import SanicException
 from sanic.exceptions import NotFound, BadRequest
 from aiohttp_client_cache import CachedSession, SQLiteBackend
+from sanic.log import logger
 
 class Client:
-    # def __init__(self) -> None:
-    #     self.url = None
-    #     self.params  = None
-    #     self.headers = None
-    #     self.data = None
-    
+
     @classmethod
     async def async_api_call(cls,headers,params,data):
         '''
         Make the async api call
         return : dict
         '''
+        st = time.time()
         timeout = aiohttp.ClientTimeout(total=10)
         try:
             async with CachedSession(cache=SQLiteBackend('cache/demo_cache',allowed_methods=('GET', 'POST')),allowable_methods = ['GET','POST']) as session:
@@ -30,6 +28,7 @@ class Client:
                              raise NotFound()             
                         response = await response.json()
                         cls.success += 1
+                        #logger.info(f"Time taken is {time.time()-st}")
                         return response
         except asyncio.TimeoutError:
              cls.failure += 1
