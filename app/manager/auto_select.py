@@ -21,5 +21,5 @@ class AutoSelectManager():
         else:
             #print("Lacto is selected")
             manager = Lacto
-        response  = await manager.translate(request)
+        response  = await manager.translate_validate(request)
         return response

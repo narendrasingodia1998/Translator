@@ -4,7 +4,7 @@ from app.utils.helper import copy_data
 from app.model.request import TranslatorRequest
 from app.utils.constants import UrlEndPoints
 from app.model.response import TranslatorResponse
-from app.utils.helper import get_code
+from app.utils.helper import get_code,read_file_,write_file_
 from sanic.exceptions import  BadRequest
 from app.Config import config
 from sanic.exceptions import SanicException
@@ -14,27 +14,46 @@ from sanic.log import logger
 from app.utils.helper import split_text_into_chunks
 
 class Translator(Client):
+
     @classmethod
-    async def translate(cls,request):
-         '''
-         Translate the text
-         Args:
-            request : dict 
-         Return : dict
-         '''
-         # Checking source text language
-         response = await DetectManager.detect_language(request)
-         
-         # if source language is not same as source text
-         if 'source_language' in request and request['source_language'].lower() != response['source_language'].lower():
-              SanicException("Source text and Source Language does not match.", status_code=400)
-         if response['source_language'].lower() == request['target_language']:
-             SanicException("Source language and target language is same",status_code=400) 
-         request = copy_data(request,response)
-         request = TranslatorRequest(**request)
-         headers,params,data,our_response =  cls._build(request)
-         response = await cls.async_api_call(headers,params,data)
-         return dict(cls._build_response(our_response,response))
+    async def validate(cls,request):
+        '''
+        Detect source language based on source text
+        Args :
+            request : dict
+        return : dict (request data created by adding source add)
+        '''
+        # Checking source text language
+        response = await DetectManager.detect_language(request)
+        # if source language is not same as source text
+        if 'source_language' in request and request['source_language'].lower() != response['source_language'].lower():
+            SanicException("Source text and Source Language does not match.", status_code=400)
+        request = copy_data(request,response)
+        return request
+    
+    @classmethod
+    async def translate_text(cls,request):
+        '''
+        Translate the text 
+        Args : 
+            request : dict
+        return : dict
+        '''
+        request = TranslatorRequest(**request)
+        headers,params,data,our_response =  cls._build(request)
+        response = await cls.async_api_call(headers,params,data)
+        return dict(cls._build_response(our_response,response))
+
+    @classmethod
+    async def translate_validate(cls,request):
+        '''
+        Translate and validate
+        Args :
+            request : dict
+        return : dict
+        '''
+        request = await cls.validate(request)
+        return await cls.translate_text(request)
     
     @classmethod
     async def add_log(cls,text):
@@ -78,35 +97,30 @@ class Google(Translator):
         our_response['target_text'] =response['data']['translations'][0]['translatedText']
         return TranslatorResponse(**our_response)
     
-    @classmethod 
+    @classmethod
     async def file_translate(cls,request):
-        '''
-        Translate the file
-        '''
+        
         input_file = request['input_file']
-        try: 
-            with open(input_file, 'r') as file:
-                input_text = file.read()
-        except:
-            BadRequest("Input file doesnot exist")
+        input_text = await read_file_(input_file)
+
         chunks = split_text_into_chunks(input_text, cls.api_limit)
-        translated_chunks = []
-        tasks = []
         our_data ={"source_language":request["source_language"],
                "target_language":request["target_language"]}
-        print(our_data)
+        tasks = []
+        
         for chunk in chunks:
             our_data["source_text"] = chunk
-            headers,params,data,_ = cls._build(TranslatorRequest(**our_data))
-            task = cls.async_api_call(headers,params,data)
-            tasks.append(task)
+            tasks.append(cls.translate_text(our_data))
+
         translated_chunks =  await asyncio.gather(*tasks,return_exceptions=True)
-        translated_chunks = [chunk['data']['translations'][0]['translatedText'] for chunk in translated_chunks]
+        translated_chunks = [chunk['target_text'] for chunk in translated_chunks]
+
         translated_text = " ".join(translated_chunks)
+
         output_language = request['target_language']
         output_file = input_file.split('.')[0] + '_' + output_language + '.' + input_file.split('.')[1]
-        with open(output_file, 'w') as file:
-            file.write(translated_text)
+        
+        await write_file_(output_file,translated_text)
         return {"output_file":output_file}
     
 class Rapid(Translator):

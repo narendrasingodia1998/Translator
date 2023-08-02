@@ -21,21 +21,21 @@ async def auto(request,body:TranslatorRequest):
 @validate(json=TranslatorRequest)
 async def google(request,body:TranslatorRequest):
     request = request.json
-    response = await Google.translate(request)
+    response = await Google.translate_validate(request)
     return json(response)
 
 @trans_bp.post('/lacto')
 @validate(json=TranslatorRequest)
 async def lacto(request,body:TranslatorRequest):
     request = request.json
-    response = await Lacto.translate(request)
+    response = await Lacto.translate_validate(request)
     return json(response)
 
 @trans_bp.post('/rapid')
 @validate(json=TranslatorRequest)
 async def rapid(request,body:TranslatorRequest):
     request = request.json
-    response = await Rapid.translate(request)
+    response = await Rapid.translate_validate(request)
     return json(response)
 
 @trans_bp.post('/file')

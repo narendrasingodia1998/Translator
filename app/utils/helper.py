@@ -1,4 +1,7 @@
+import aiofiles
+from sanic.exceptions import  BadRequest
 from app.utils.lang_code import lang_code
+
 def get_code(language):
     return lang_code[language.strip().lower()]
 
@@ -38,3 +41,15 @@ def split_text_into_chunks(text, chunk_size):
         chunks.append(current_chunk.strip())
 
     return chunks
+
+async def read_file_(input_file):
+    try: 
+        async with aiofiles.open(input_file, mode='r') as file:
+            input_text = await file.read()
+            return input_text
+    except:
+        BadRequest("Input file doesnot exist")
+
+async def write_file_(input_file,input_text):
+    async with aiofiles.open(input_file,mode='w') as file:
+        await file.write(input_text)
